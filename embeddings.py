@@ -150,3 +150,23 @@ if __name__ == "__main__":
         qdrant_host=args.qhost,
         qdrant_port=args.qport,
     )
+
+def embed_query(query: str, model_name: str = "all-MiniLM-L6-v2") -> List[float]:
+    """Generate embedding for a single query string."""
+    from sentence_transformers import SentenceTransformer
+    
+    if model_name.startswith("all-") or model_name.startswith("sentence-transformers"):
+        model_id = (
+            f"sentence-transformers/{model_name}"
+            if not model_name.startswith("sentence-transformers/")
+            and not model_name.startswith("all-MiniLM")
+            and not model_name.startswith("all-")
+            else model_name
+        )
+    else:
+        model_id = model_name
+
+    model = SentenceTransformer(model_id)
+    vector = model.encode(query, show_progress_bar=False)
+    
+    return vector.tolist() if hasattr(vector, "tolist") else list(vector)

@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from models import fileProcess
+from pydantic import BaseModel
 from chunking import chunking
-from embeddings import embed_and_store
+from embeddings import embed_and_store, embed_query
 
 app = FastAPI(title="Chunking Storage")
 
@@ -25,3 +26,11 @@ def store(request: fileProcess):
 
 
     return embeddings
+
+class EmbedRequest(BaseModel):
+    text: str
+
+@app.post('/api/embed')
+def embed(request: EmbedRequest):
+    vector = embed_query(request.text)
+    return {"vector": vector}

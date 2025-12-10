@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Chunk a document, embed chunks and store to Qdrant")
     parser.add_argument("url", help="Document URL to chunk and embed")
-    parser.add_argument("--collection", default="sow_chunks", help="Qdrant collection name")
+    parser.add_argument("--collection", default="doc_chunks", help="Qdrant collection name")
     parser.add_argument("--model", default="all-MiniLM-L6-v2", help="SentenceTransformer model name")
     parser.add_argument("--qhost", help="Qdrant host (default: localhost)")
     parser.add_argument("--qport", type=int, help="Qdrant port (default: 6333)")

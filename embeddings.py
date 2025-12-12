@@ -46,7 +46,12 @@ def embed_and_store(
         model_id = model_name
 
     print(f"Loading embedding model '{model_id}'...")
-    model = SentenceTransformer(model_id)
+    # Cache model to avoid re-loading on every call (improves stability)
+    try:
+        model = _get_model(model_id)
+    except Exception:
+        model = SentenceTransformer(model_id)
+        _cache_model(model_id, model)
 
     vector_size = model.get_sentence_embedding_dimension()
 
@@ -113,7 +118,11 @@ def embed_and_store(
         batch_ids = ids[start:end]
         batch_payloads = payloads[start:end]
 
-        vectors = model.encode(batch_texts, show_progress_bar=False)
+        try:
+            vectors = model.encode(batch_texts, show_progress_bar=False)
+        except Exception as e:
+            print(f"Embedding model failed to encode batch: {e}")
+            raise
 
         points = []
         for pid, vec, payload in zip(batch_ids, vectors, batch_payloads):
@@ -166,7 +175,27 @@ def embed_query(query: str, model_name: str = "all-MiniLM-L6-v2") -> List[float]
     else:
         model_id = model_name
 
-    model = SentenceTransformer(model_id)
-    vector = model.encode(query, show_progress_bar=False)
-    
+    # Use cached model when possible
+    try:
+        model = _get_model(model_id)
+    except Exception:
+        model = SentenceTransformer(model_id)
+        _cache_model(model_id, model)
+
+    try:
+        vector = model.encode(query, show_progress_bar=False)
+    except Exception as e:
+        print(f"embed_query failed: {e}")
+        raise
+
     return vector.tolist() if hasattr(vector, "tolist") else list(vector)
+
+
+# Simple in-module model cache
+_MODEL_CACHE: dict = {}
+
+def _get_model(name: str):
+    return _MODEL_CACHE[name]
+
+def _cache_model(name: str, model):
+    _MODEL_CACHE[name] = model
